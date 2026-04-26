@@ -1,6 +1,7 @@
 import UploadForm from "@/components/upload-form";
 import PresetSelector from "@/components/preset-selector";
 import ResultSummary from "@/components/result-summary";
+import SampleCsvButton from "@/components/sample-csv-button";
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
         file.
       </p>
       <div style={{ margin: "2rem 0" }}>
+        <SampleCsvButton />
         <UploadForm />
       </div>
       <div style={{ margin: "2rem 0" }}>

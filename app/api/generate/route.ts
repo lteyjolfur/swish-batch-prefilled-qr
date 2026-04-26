@@ -2,6 +2,10 @@ export const runtime = "nodejs";
 
 import { parseCsv } from "../../../lib/csv/parse";
 import { validateRows } from "../../../lib/csv/validate";
+import { makeFilename } from "../../../lib/utils/filenames";
+import { buildZip } from "../../../lib/zip/build-zip";
+import { generateSwishQR } from "../../../lib/swish/generate-qr";
+import { applyPreset } from "../../../lib/image/presets";
 
 export async function POST(req: Request) {
   try {
@@ -40,22 +44,47 @@ export async function POST(req: Request) {
       return Response.json({ success: false, errors }, { status: 400 });
     }
 
-    // Step 3.4: Generate Swish QR for each valid row
-    const { generateSwishQR } = await import("../../../lib/swish/generate-qr");
-    let generated = 0;
-    for (const row of valid) {
+    // Step 3.4: Generate Swish QR and compose branded images for each valid row
+    const files: { filename: string; buffer: Buffer }[] = [];
+    for (let i = 0; i < valid.length; i++) {
+      const row = valid[i];
+      let qrBuffer: Buffer;
+      let imageBuffer: Buffer;
       try {
-        await generateSwishQR(row);
-        generated++;
+        qrBuffer = await generateSwishQR(row);
+        imageBuffer = await applyPreset("branded", qrBuffer, row.label);
       } catch (err: any) {
         return Response.json(
-          { success: false, error: err?.message || "QR generation failed" },
+          {
+            success: false,
+            error: err?.message || "QR/image generation failed",
+          },
           { status: 500 },
         );
       }
+      const filename = makeFilename(row, i + 1);
+      files.push({ filename, buffer: imageBuffer });
     }
 
-    return Response.json({ success: true, count: valid.length, generated });
+    // Step 5.3: Build ZIP
+    let zipBuffer: Buffer;
+    try {
+      zipBuffer = await buildZip(files);
+    } catch (err: any) {
+      return Response.json(
+        { success: false, error: err?.message || "ZIP packaging failed" },
+        { status: 500 },
+      );
+    }
+
+    // Step 5.4: Return ZIP as downloadable response
+    return new Response(zipBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": "attachment; filename=swish-qr-codes.zip",
+      },
+    });
   } catch (err) {
     return Response.json(
       { success: false, error: "Internal server error" },
