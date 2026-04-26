@@ -12,12 +12,21 @@ export function validateRows(rows: CsvRow[]): {
 
   rows.forEach((row, idx) => {
     const rowNum = idx + 1; // 1-based, excluding header
-    const name = row.name?.trim() ?? "";
+    const payee = row.payee?.trim() ?? "";
     const amountStr = row.amount?.trim() ?? "";
     const message = row.message?.trim() ?? "";
+    const label = row.label?.trim() || undefined;
+    const sizeStr = row.size?.trim() ?? "";
+    let size = 1000;
+    if (sizeStr) {
+      const parsedSize = Number(sizeStr);
+      if (isFinite(parsedSize) && parsedSize > 0) {
+        size = parsedSize;
+      }
+    }
 
-    if (!name) {
-      errors.push({ row: rowNum, message: "Name is required" });
+    if (!payee) {
+      errors.push({ row: rowNum, message: "Payee is required" });
       return;
     }
     if (!amountStr) {
@@ -45,7 +54,7 @@ export function validateRows(rows: CsvRow[]): {
       return;
     }
 
-    valid.push({ name, amount, message });
+    valid.push({ payee, amount, message, label, size });
   });
 
   return { valid, errors };

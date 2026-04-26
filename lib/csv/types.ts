@@ -1,11 +1,15 @@
 export type CsvRow = {
-  name?: string;
+  payee?: string;
   amount?: string;
   message?: string;
+  label?: string;
+  size?: string;
 };
 
 export type PaymentRow = {
-  name: string;
+  payee: string;
   amount: number;
   message: string;
+  label?: string;
+  size: number;
 };

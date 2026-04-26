@@ -40,7 +40,22 @@ export async function POST(req: Request) {
       return Response.json({ success: false, errors }, { status: 400 });
     }
 
-    return Response.json({ success: true, count: valid.length });
+    // Step 3.4: Generate Swish QR for each valid row
+    const { generateSwishQR } = await import("../../../lib/swish/generate-qr");
+    let generated = 0;
+    for (const row of valid) {
+      try {
+        await generateSwishQR(row);
+        generated++;
+      } catch (err: any) {
+        return Response.json(
+          { success: false, error: err?.message || "QR generation failed" },
+          { status: 500 },
+        );
+      }
+    }
+
+    return Response.json({ success: true, count: valid.length, generated });
   } catch (err) {
     return Response.json(
       { success: false, error: "Internal server error" },
