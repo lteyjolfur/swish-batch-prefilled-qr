@@ -25,12 +25,23 @@ export function validateRows(rows: CsvRow[]): {
       return;
     }
     const amount = Number(amountStr);
-    if (isNaN(amount)) {
-      errors.push({ row: rowNum, message: "Amount must be a number" });
+    if (!isFinite(amount)) {
+      errors.push({ row: rowNum, message: "Amount must be a valid number" });
+      return;
+    }
+    if (amount <= 0) {
+      errors.push({ row: rowNum, message: "Amount must be greater than 0" });
       return;
     }
     if (!message) {
       errors.push({ row: rowNum, message: "Message is required" });
+      return;
+    }
+    if (message.length > 50) {
+      errors.push({
+        row: rowNum,
+        message: "Message must be 50 characters or fewer",
+      });
       return;
     }
 
