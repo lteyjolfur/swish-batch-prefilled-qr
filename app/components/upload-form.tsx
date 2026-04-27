@@ -94,7 +94,7 @@ export default function UploadForm() {
       />
       <button
         type="submit"
-        className="bg-blue-600 dark:bg-blue-500 text-white dark:text-gray-900 px-4 py-2 rounded disabled:opacity-60 w-full font-semibold"
+        className="bg-blue-800 dark:bg-blue-500 text-white dark:text-gray-900 px-4 py-2 rounded disabled:opacity-60 w-full font-semibold"
         disabled={!file || loading}
       >
         {loading ? "Generating..." : "Generate ZIP"}
