@@ -19,6 +19,11 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const file = formData.get("file");
+    const presetRaw = formData.get("preset");
+    let preset: "plain" | "branded" = "branded";
+    if (presetRaw === "plain" || presetRaw === "branded") {
+      preset = presetRaw;
+    }
     if (!file || typeof file !== "object" || !("arrayBuffer" in file)) {
       return Response.json(
         { success: false, error: "Missing file upload" },
@@ -52,7 +57,7 @@ export async function POST(req: Request) {
       let imageBuffer: Buffer;
       try {
         qrBuffer = await generateSwishQR(row);
-        imageBuffer = await applyPreset("branded", qrBuffer, row.label);
+        imageBuffer = await applyPreset(preset, qrBuffer, row.label);
       } catch (err: any) {
         return Response.json(
           {
