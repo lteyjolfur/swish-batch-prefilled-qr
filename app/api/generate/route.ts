@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     let rows;
     try {
       rows = parseCsv(csvText);
-    } catch (err) {
+    } catch {
       return Response.json(
         { success: false, error: "Invalid CSV format" },
         { status: 400 },
@@ -58,11 +58,15 @@ export async function POST(req: Request) {
       try {
         qrBuffer = await generateSwishQR(row);
         imageBuffer = await applyPreset(preset, qrBuffer, row.label);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        let message = "QR/image generation failed";
+        if (typeof err === "object" && err !== null && "message" in err && typeof (err as { message?: unknown }).message === "string") {
+          message = (err as { message: string }).message;
+        }
         return Response.json(
           {
             success: false,
-            error: err?.message || "QR/image generation failed",
+            error: message,
           },
           { status: 500 },
         );
@@ -75,22 +79,26 @@ export async function POST(req: Request) {
     let zipBuffer: Buffer;
     try {
       zipBuffer = await buildZip(files);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let message = "ZIP packaging failed";
+      if (typeof err === "object" && err !== null && "message" in err && typeof (err as { message?: unknown }).message === "string") {
+        message = (err as { message: string }).message;
+      }
       return Response.json(
-        { success: false, error: err?.message || "ZIP packaging failed" },
+        { success: false, error: message },
         { status: 500 },
       );
     }
 
     // Step 5.4: Return ZIP as downloadable response
-    return new Response(zipBuffer, {
+    return new Response(new Uint8Array(zipBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": "attachment; filename=swish-qr-codes.zip",
       },
     });
-  } catch (err) {
+  } catch {
     return Response.json(
       { success: false, error: "Internal server error" },
       { status: 500 },
