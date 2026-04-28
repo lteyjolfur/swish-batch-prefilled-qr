@@ -3,6 +3,8 @@
 Batch generate branded Swish QR codes from CSV.  
 Built to simplify payment collection for clubs and organizations.
 
+[Live Preview](https://swish-batch-prefilled-qr.vercel.app/)
+
 ![Screenshot](public/screenshot.png)
 
 ---
