@@ -1,4 +1,12 @@
 import sharp from "sharp";
+import fs from "fs/promises";
+import path from "path";
+// Helper to load Geist font as base64
+async function getFontBase64() {
+  const fontPath = path.join(process.cwd(), "public/fonts/Geist-Regular.woff2");
+  const fontBuffer = await fs.readFile(fontPath);
+  return fontBuffer.toString("base64");
+}
 
 function escapeSVG(text: string): string {
   return text.replace(
@@ -18,6 +26,7 @@ export async function composeCard(
   qrBuffer: Buffer,
   label?: string,
 ): Promise<Buffer> {
+  const fontBase64 = await getFontBase64();
   // Refined card layout constants
   const cardWidth = 520;
   const cardHeight = 600;
@@ -38,6 +47,17 @@ export async function composeCard(
   // SVG background with card, border, label bar (not full width), subtle shadow, outline, and visually centered text
   const svg = `
   <svg width='${cardWidth}' height='${cardHeight}' viewBox='0 0 ${cardWidth} ${cardHeight}' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <style>
+      @font-face {
+        font-family: 'GeistEmbedded';
+        src: url(data:font/woff2;base64,${fontBase64}) format('woff2');
+        font-weight: 600;
+      }
+      .label {
+        font-family: 'GeistEmbedded', sans-serif;
+        font-weight: 600;
+      }
+    </style>
     <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000" flood-opacity="0.07"/>
       <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#a855f7" flood-opacity="0.10"/>
@@ -50,7 +70,7 @@ export async function composeCard(
         <stop offset='100%' stop-color='#ec4899'/>
       </linearGradient>
     </defs>
-    <text x='50%' y='${labelY + labelHeight / 2 + 2}' text-anchor='middle' dominant-baseline='middle' font-size='32' font-family='sans-serif' fill='white' font-weight='bold'>${text}</text>
+    <text x='50%' y='${labelY + labelHeight / 2 + 2}' text-anchor='middle' dominant-baseline='middle' font-size='32' class='label' fill='white'>${text}</text>
   </svg>
   `;
 
