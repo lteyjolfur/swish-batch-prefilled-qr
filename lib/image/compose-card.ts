@@ -1,32 +1,16 @@
 import sharp from "sharp";
-import fs from "fs/promises";
 import path from "path";
+import TextToSVG from "text-to-svg";
 // Helper to load Geist font as base64
-async function getFontBase64() {
-  const fontPath = path.join(process.cwd(), "public/fonts/Geist-Regular.woff2");
-  const fontBuffer = await fs.readFile(fontPath);
-  return fontBuffer.toString("base64");
-}
 
-function escapeSVG(text: string): string {
-  return text.replace(
-    /[&<>"']/g,
-    (c) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[c] || c,
-  );
-}
+const fontPath = path.join(process.cwd(), "public/fonts/Geist-SemiBold.ttf");
+
+const textToSVG = TextToSVG.loadSync(fontPath);
 
 export async function composeCard(
   qrBuffer: Buffer,
   label?: string,
 ): Promise<Buffer> {
-  const fontBase64 = await getFontBase64();
   // Refined card layout constants
   const cardWidth = 520;
   const cardHeight = 600;
@@ -39,40 +23,60 @@ export async function composeCard(
   const cardColor = "#fff"; // pure white
 
   // Fallback to label or empty string
-  const text = escapeSVG(label || "");
+  const text = label || "";
 
   // Calculate label bar position
   const bottomPadding = 24;
   const labelY = cardHeight - labelHeight - bottomPadding;
+
+  const textSvg = textToSVG.getPath(text, {
+    x: cardWidth / 2,
+    y: labelY + labelHeight / 2,
+    fontSize: 32,
+    anchor: "center middle",
+    attributes: {
+      fill: "#ffffff",
+    },
+  });
+
   // SVG background with card, border, label bar (not full width), subtle shadow, outline, and visually centered text
   const svg = `
-  <svg width='${cardWidth}' height='${cardHeight}' viewBox='0 0 ${cardWidth} ${cardHeight}' fill='none' xmlns='http://www.w3.org/2000/svg'>
-    <style>
-      @font-face {
-        font-family: 'GeistEmbedded';
-        src: url(data:font/woff2;base64,${fontBase64}) format('woff2');
-        font-weight: 600;
-      }
-      .label {
-        font-family: 'GeistEmbedded', sans-serif;
-        font-weight: 600;
-      }
-    </style>
-    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000" flood-opacity="0.07"/>
-      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#a855f7" flood-opacity="0.10"/>
-    </filter>
-    <rect x='0' y='0' width='${cardWidth}' height='${cardHeight}' rx='${cardRadius}' fill='${cardColor}' stroke='${borderColor}' stroke-width='2' filter='url(#cardShadow)'/>
-    <rect x='40' y='${labelY}' width='${cardWidth - 80}' height='${labelHeight}' rx='${labelRadius}' fill='url(#g1)'/>
-    <defs>
-      <linearGradient id='g1' x1='0' y1='0' x2='1' y2='0'>
-        <stop offset='0%' stop-color='#a855f7'/>
-        <stop offset='100%' stop-color='#ec4899'/>
-      </linearGradient>
-    </defs>
-    <text x='50%' y='${labelY + labelHeight / 2 + 2}' text-anchor='middle' dominant-baseline='middle' font-size='32' class='label' fill='white'>${text}</text>
-  </svg>
-  `;
+<svg width='${cardWidth}' height='${cardHeight}' viewBox='0 0 ${cardWidth} ${cardHeight}' xmlns='http://www.w3.org/2000/svg'>
+
+  <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#000" flood-opacity="0.07"/>
+    <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#a855f7" flood-opacity="0.10"/>
+  </filter>
+
+
+  <rect x='0' y='0' width='${cardWidth}' height='${cardHeight}'
+    rx='${cardRadius}'
+    fill='${cardColor}'
+    stroke='${borderColor}'
+    stroke-width='2'
+    filter='url(#cardShadow)'
+  />
+
+  <rect x='40' y='${labelY}' width='${cardWidth - 80}' height='${labelHeight}'
+    rx='${labelRadius}'
+    fill='url(#g1)'
+  />
+
+  <defs>
+    <linearGradient id='g1' x1='0' y1='0' x2='1' y2='0'>
+      <stop offset='0%' stop-color='#a855f7'/>
+      <stop offset='100%' stop-color='#ec4899'/>
+    </linearGradient>
+  </defs>
+
+  ${textSvg}
+
+</svg>
+`;
+
+  // Debug: output SVG string to console
+
+  // console.log("[composeCard SVG]", svg);
 
   // Resize QR to 462x462
   const qrImg = await sharp(qrBuffer)
