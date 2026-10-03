@@ -1,9 +1,25 @@
 export const runtime = "nodejs";
 
+import { parseCsv } from "../../../lib/csv/parse";
+import { validateRows } from "../../../lib/csv/validate";
+import { makeFilename } from "../../../lib/utils/filenames";
+import { buildZip } from "../../../lib/zip/build-zip";
+import { generateSwishQR } from "../../../lib/swish/generate-qr";
+import { applyPreset } from "../../../lib/image/presets";
+import { createRateLimiter, getClientIp } from "../../../lib/utils/rate-limit";
+
 const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_ROWS = 200;
 // Parallel requests to the Swish QR API
 const CONCURRENCY = 5;
+// Per-IP request budget; each request can fan out to MAX_ROWS Swish calls
+const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60_000;
+
+const checkRateLimit = createRateLimiter({
+  limit: RATE_LIMIT,
+  windowMs: RATE_WINDOW_MS,
+});
 
 // Like Promise.all over items.map(fn), but with at most `limit` in flight.
 async function mapWithLimit<T, R>(
@@ -25,14 +41,18 @@ async function mapWithLimit<T, R>(
   return results;
 }
 
-import { parseCsv } from "../../../lib/csv/parse";
-import { validateRows } from "../../../lib/csv/validate";
-import { makeFilename } from "../../../lib/utils/filenames";
-import { buildZip } from "../../../lib/zip/build-zip";
-import { generateSwishQR } from "../../../lib/swish/generate-qr";
-import { applyPreset } from "../../../lib/image/presets";
-
 export async function POST(req: Request) {
+  const { allowed, retryAfterSeconds } = checkRateLimit(getClientIp(req));
+  if (!allowed) {
+    return Response.json(
+      {
+        success: false,
+        error: `Too many requests. Please wait ${retryAfterSeconds} seconds and try again.`,
+      },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+    );
+  }
+
   try {
     const contentType = req.headers.get("content-type") || "";
     if (!contentType.includes("multipart/form-data")) {
