@@ -1,5 +1,30 @@
 export const runtime = "nodejs";
 
+const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_ROWS = 200;
+// Parallel requests to the Swish QR API
+const CONCURRENCY = 5;
+
+// Like Promise.all over items.map(fn), but with at most `limit` in flight.
+async function mapWithLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  );
+  return results;
+}
+
 import { parseCsv } from "../../../lib/csv/parse";
 import { validateRows } from "../../../lib/csv/validate";
 import { makeFilename } from "../../../lib/utils/filenames";
@@ -31,6 +56,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (file.size > MAX_FILE_BYTES) {
+      return Response.json(
+        { success: false, error: "CSV file must be 1 MB or smaller" },
+        { status: 400 },
+      );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const csvText = buffer.toString("utf-8");
 
@@ -44,36 +76,39 @@ export async function POST(req: Request) {
       );
     }
 
+    if (rows.length > MAX_ROWS) {
+      return Response.json(
+        {
+          success: false,
+          error: `CSV can have at most ${MAX_ROWS} rows (got ${rows.length})`,
+        },
+        { status: 400 },
+      );
+    }
+
     const { valid, errors } = validateRows(rows);
     if (errors.length > 0) {
       return Response.json({ success: false, errors }, { status: 400 });
     }
 
     // Step 3.4: Generate Swish QR and compose branded images for each valid row
-    const files: { filename: string; buffer: Buffer }[] = [];
-    for (let i = 0; i < valid.length; i++) {
-      const row = valid[i];
-      let qrBuffer: Buffer;
-      let imageBuffer: Buffer;
-      try {
-        qrBuffer = await generateSwishQR(row);
-        imageBuffer = await applyPreset(preset, qrBuffer, row.label);
-      } catch (err: unknown) {
-        let message = "QR/image generation failed";
-        if (typeof err === "object" && err !== null && "message" in err && typeof (err as { message?: unknown }).message === "string") {
-          message = (err as { message: string }).message;
-        }
-        return Response.json(
-          {
-            success: false,
-            error: message,
-          },
-          { status: 500 },
-        );
-      }
-      const filename = makeFilename(row, i + 1);
-      files.push({ filename, buffer: imageBuffer });
+    let images: Buffer[];
+    try {
+      images = await mapWithLimit(valid, CONCURRENCY, async (row) => {
+        const qrBuffer = await generateSwishQR(row);
+        return applyPreset(preset, qrBuffer, row.label);
+      });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "QR/image generation failed";
+      return Response.json({ success: false, error: message }, { status: 500 });
     }
+
+    const usedFilenames = new Set<string>();
+    const files = valid.map((row, i) => ({
+      filename: makeFilename(row, i + 1, usedFilenames),
+      buffer: images[i],
+    }));
 
     // Step 5.3: Build ZIP
     let zipBuffer: Buffer;

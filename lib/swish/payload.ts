@@ -15,6 +15,6 @@ export function toSwishPayload(row: PaymentRow) {
       value: row.message,
       editable: false,
     },
-    size: 500,
+    size: row.size,
   };
 }

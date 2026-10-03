@@ -5,7 +5,7 @@ Built to simplify payment collection for clubs and organizations.
 
 [Live Preview](https://swish-batch-prefilled-qr.vercel.app/)
 
-![Screenshot](public/screenshot.png)
+![Screenshot](public/Screenshot.png)
 
 ---
 
