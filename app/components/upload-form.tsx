@@ -84,6 +84,12 @@ export default function UploadForm() {
         setResult({ errors: errors.length ? errors : ["Validation failed."] });
         return;
       }
+      if (res.status === 429) {
+        setResult({
+          serverError: errors[0] ?? "Too many requests. Please try again later.",
+        });
+        return;
+      }
       setResult({
         serverError: errors.length
           ? `Server error: ${errors.join(" ")}`

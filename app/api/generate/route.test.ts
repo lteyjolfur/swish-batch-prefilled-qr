@@ -26,13 +26,18 @@ function mockSwish(impl?: () => Promise<Response>) {
   return fetchMock;
 }
 
-function request(csv: string, preset = "plain") {
+// Each request gets its own IP so the shared rate limiter doesn't interfere
+let ipCounter = 0;
+const nextIp = () => `10.0.0.${++ipCounter}`;
+
+function request(csv: string, preset = "plain", ip = nextIp()) {
   const form = new FormData();
   form.append("file", new File([csv], "payments.csv", { type: "text/csv" }));
   form.append("preset", preset);
   return new Request("http://localhost/api/generate", {
     method: "POST",
     body: form,
+    headers: { "x-real-ip": ip },
   });
 }
 
@@ -140,7 +145,7 @@ describe("POST /api/generate", () => {
       new Request("http://localhost/api/generate", {
         method: "POST",
         body: "{}",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-real-ip": nextIp() },
       }),
     );
     expect(res.status).toBe(400);
@@ -164,5 +169,25 @@ describe("POST /api/generate", () => {
     expect(await res.json()).toMatchObject({
       error: "Swish QR generation failed: ECONNREFUSED",
     });
+  });
+
+  it("rate limits each IP to 10 requests per minute", async () => {
+    const fetchMock = mockSwish();
+    const ip = "203.0.113.7";
+    const csv = header + "123,100,Fee,\n";
+    for (let i = 0; i < 10; i++) {
+      expect((await POST(request(csv, "plain", ip))).status).toBe(200);
+    }
+
+    const limited = await POST(request(csv, "plain", ip));
+    expect(limited.status).toBe(429);
+    expect(Number(limited.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect(await limited.json()).toMatchObject({
+      error: expect.stringContaining("Too many requests"),
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(10);
+
+    // Other clients are unaffected
+    expect((await POST(request(csv))).status).toBe(200);
   });
 });
