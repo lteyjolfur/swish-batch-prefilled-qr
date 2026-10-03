@@ -12,9 +12,11 @@ export async function generateSwishQR(row: PaymentRow): Promise<Buffer> {
       { responseType: "arraybuffer" },
     );
     return Buffer.from(response.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const msg =
-      error?.response?.data?.message || error.message || "Unknown error";
+      (axios.isAxiosError(error) && error.response?.data?.message) ||
+      (error instanceof Error && error.message) ||
+      "Unknown error";
     throw new Error(`Swish QR generation failed: ${msg}`);
   }
 }

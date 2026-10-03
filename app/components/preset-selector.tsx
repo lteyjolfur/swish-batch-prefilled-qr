@@ -9,35 +9,33 @@ export default function PresetSelector({
   onChange: (value: Preset) => void;
   disabled?: boolean;
 }) {
+  const options: { value: Preset; label: string }[] = [
+    { value: "branded", label: "Branded" },
+    { value: "plain", label: "Plain" },
+  ];
   return (
-    <div className="space-y-2">
-      <label className="block font-medium text-gray-900 dark:text-gray-100">
+    <fieldset className="space-y-2" disabled={disabled}>
+      <legend className="block font-medium text-gray-900 dark:text-gray-100">
         Preset
-      </label>
-      <div className="flex gap-4">
-        <label className="flex items-center gap-1 text-gray-800 dark:text-gray-200">
-          <input
-            type="radio"
-            name="preset"
-            value="branded"
-            checked={value === "branded"}
-            onChange={() => onChange("branded")}
-            disabled={disabled}
-          />
-          Branded
-        </label>
-        <label className="flex items-center gap-1 text-gray-800 dark:text-gray-200">
-          <input
-            type="radio"
-            name="preset"
-            value="plain"
-            checked={value === "plain"}
-            onChange={() => onChange("plain")}
-            disabled={disabled}
-          />
-          Plain
-        </label>
+      </legend>
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className="flex items-center gap-2 py-1 text-gray-800 dark:text-gray-200 cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="preset"
+              value={option.value}
+              checked={value === option.value}
+              onChange={() => onChange(option.value)}
+              className="h-4 w-4 accent-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            />
+            {option.label}
+          </label>
+        ))}
       </div>
-    </div>
+    </fieldset>
   );
 }

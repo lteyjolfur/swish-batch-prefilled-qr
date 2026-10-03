@@ -51,6 +51,7 @@ export async function POST(req: Request) {
 
     // Step 3.4: Generate Swish QR and compose branded images for each valid row
     const files: { filename: string; buffer: Buffer }[] = [];
+    const usedFilenames = new Set<string>();
     for (let i = 0; i < valid.length; i++) {
       const row = valid[i];
       let qrBuffer: Buffer;
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
           { status: 500 },
         );
       }
-      const filename = makeFilename(row, i + 1);
+      const filename = makeFilename(row, i + 1, usedFilenames);
       files.push({ filename, buffer: imageBuffer });
     }
 
