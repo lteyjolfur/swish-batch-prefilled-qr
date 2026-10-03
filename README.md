@@ -8,7 +8,7 @@ Built to simplify payment collection for clubs and organizations.
 
 [Live Preview](https://swish-batch-prefilled-qr.vercel.app/)
 
-![Screenshot](public/Screenshot.png)
+![Demo: uploading a CSV and downloading a ZIP of branded Swish QR cards](public/demo.gif)
 
 ---
 
