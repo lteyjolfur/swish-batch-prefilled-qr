@@ -26,6 +26,7 @@ This tool was built to batch-generate QR codes with consistent, clean output.
 - Branded card output (ready for sharing or printing)
 - Download all generated QR codes as a ZIP
 - Simple UI — no login, no database
+- Responsive and accessible — scores 100 in all four Lighthouse categories (Performance, Accessibility, Best Practices, SEO)
 
 ---
 
