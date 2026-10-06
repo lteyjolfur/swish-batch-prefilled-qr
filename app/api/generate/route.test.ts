@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 // Stubs the Swish QR API. Returns the mock so tests can inspect calls.
-function mockSwish(impl?: () => Promise<Response>) {
+function mockSwish(impl?: typeof fetch) {
   const fetchMock = vi.fn<typeof fetch>(
     impl ?? (async () => new Response(new Uint8Array(png), { status: 200 })),
   );
@@ -156,7 +156,7 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error: "Swish QR generation failed: HTTP 422 bad payee",
+      error: "Row 1: Swish QR generation failed: HTTP 422 bad payee",
     });
   });
 
@@ -167,8 +167,50 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error: "Swish QR generation failed: ECONNREFUSED",
+      error: "Row 1: Swish QR generation failed: ECONNREFUSED",
     });
+  });
+
+  it("names the failing row and label in Swish errors", async () => {
+    mockSwish(async () => new Response("bad payee", { status: 422 }));
+    const res = await POST(request(header + "123,100,Fee,Youth\n"));
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({
+      error: "Row 1 (Youth): Swish QR generation failed: HTTP 422 bad payee",
+    });
+  });
+
+  it("reports a Swish timeout with the row it happened on", async () => {
+    const fetchMock = mockSwish(async () => {
+      throw new DOMException(
+        "The operation was aborted due to timeout",
+        "TimeoutError",
+      );
+    });
+    const res = await POST(request(header + "123,100,Fee,Youth\n"));
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({
+      error:
+        "Row 1 (Youth): Swish QR generation failed: The operation was aborted due to timeout",
+    });
+    // Every Swish request carries an abort signal, so a hung call can time out
+    expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("stops calling Swish after a row fails", async () => {
+    // Row 1 has a payee Swish rejects; the other 19 rows are fine
+    const fetchMock = mockSwish(async (_url, init) =>
+      String(init?.body).includes('"999"')
+        ? new Response("bad payee", { status: 422 })
+        : new Response(new Uint8Array(png), { status: 200 }),
+    );
+    const rows = "999,100,Fee,\n" + "123,100,Fee,\n".repeat(19);
+    const res = await POST(request(header + rows));
+    expect(res.status).toBe(500);
+    // Give any workers still running a chance to start more requests
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Only the first batch of concurrent requests (5) is ever sent
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("rate limits each IP to 10 requests per minute", async () => {

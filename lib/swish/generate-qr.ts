@@ -2,6 +2,8 @@ import type { PaymentRow } from "../csv/types";
 import { toSwishPayload } from "./payload";
 
 const SWISH_QR_URL = "https://mpc.getswish.net/qrg-swish/api/v1/prefilled";
+// Fail fast instead of hanging until the serverless function times out
+const SWISH_TIMEOUT_MS = 10_000;
 
 export async function generateSwishQR(row: PaymentRow): Promise<Buffer> {
   let response: Response;
@@ -10,6 +12,7 @@ export async function generateSwishQR(row: PaymentRow): Promise<Buffer> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(toSwishPayload(row)),
+      signal: AbortSignal.timeout(SWISH_TIMEOUT_MS),
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Unknown error";

@@ -1,4 +1,9 @@
 "use client";
+
+import { useId, useState } from "react";
+import PresetSelector from "./preset-selector";
+import ResultSummary from "./result-summary";
+
 // Helper to trigger a browser download of a Blob
 function downloadBlob(blob: Blob, filename: string): void {
   const url = window.URL.createObjectURL(blob);
@@ -8,7 +13,9 @@ function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  window.URL.revokeObjectURL(url);
+  // Safari can start the download after a.click() returns, and revoking the
+  // URL first cancels it. Keep the blob alive a while, as FileSaver.js does.
+  setTimeout(() => window.URL.revokeObjectURL(url), 40_000);
 }
 
 // Turns the API's error body into displayable strings. Row validation errors
@@ -28,10 +35,6 @@ async function readErrors(res: Response): Promise<string[]> {
   }
   return [];
 }
-
-import { useId, useState } from "react";
-import PresetSelector from "./preset-selector";
-import ResultSummary from "./result-summary";
 
 export type Preset = "plain" | "branded";
 
