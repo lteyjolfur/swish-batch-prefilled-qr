@@ -156,7 +156,7 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error: "Swish QR generation failed: HTTP 422 bad payee",
+      error: "Row 1: Swish QR generation failed: HTTP 422 bad payee",
     });
   });
 
@@ -167,7 +167,16 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error: "Swish QR generation failed: ECONNREFUSED",
+      error: "Row 1: Swish QR generation failed: ECONNREFUSED",
+    });
+  });
+
+  it("names the failing row and label in Swish errors", async () => {
+    mockSwish(async () => new Response("bad payee", { status: 422 }));
+    const res = await POST(request(header + "123,100,Fee,Youth\n"));
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({
+      error: "Row 1 (Youth): Swish QR generation failed: HTTP 422 bad payee",
     });
   });
 

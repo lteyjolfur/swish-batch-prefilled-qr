@@ -111,12 +111,20 @@ export async function POST(req: Request) {
       return Response.json({ success: false, errors }, { status: 400 });
     }
 
-    // Step 3.4: Generate Swish QR and compose branded images for each valid row
+    // Fetch each QR code from Swish and apply the chosen preset.
+    // Validation passed, so valid[i] is CSV data row i + 1.
     let images: Buffer[];
     try {
-      images = await mapWithLimit(valid, CONCURRENCY, async (row) => {
-        const qrBuffer = await generateSwishQR(row);
-        return applyPreset(preset, qrBuffer, row.label);
+      images = await mapWithLimit(valid, CONCURRENCY, async (row, i) => {
+        try {
+          const qrBuffer = await generateSwishQR(row);
+          return await applyPreset(preset, qrBuffer, row.label);
+        } catch (err: unknown) {
+          const message =
+            err instanceof Error ? err.message : "QR/image generation failed";
+          const where = row.label ? `Row ${i + 1} (${row.label})` : `Row ${i + 1}`;
+          throw new Error(`${where}: ${message}`);
+        }
       });
     } catch (err: unknown) {
       const message =
@@ -130,22 +138,14 @@ export async function POST(req: Request) {
       buffer: images[i],
     }));
 
-    // Step 5.3: Build ZIP
     let zipBuffer: Buffer;
     try {
       zipBuffer = await buildZip(files);
     } catch (err: unknown) {
-      let message = "ZIP packaging failed";
-      if (typeof err === "object" && err !== null && "message" in err && typeof (err as { message?: unknown }).message === "string") {
-        message = (err as { message: string }).message;
-      }
-      return Response.json(
-        { success: false, error: message },
-        { status: 500 },
-      );
+      const message = err instanceof Error ? err.message : "ZIP packaging failed";
+      return Response.json({ success: false, error: message }, { status: 500 });
     }
 
-    // Step 5.4: Return ZIP as downloadable response
     return new Response(new Uint8Array(zipBuffer), {
       status: 200,
       headers: {

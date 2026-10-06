@@ -1,4 +1,9 @@
 "use client";
+
+import { useId, useState } from "react";
+import PresetSelector from "./preset-selector";
+import ResultSummary from "./result-summary";
+
 // Helper to trigger a browser download of a Blob
 function downloadBlob(blob: Blob, filename: string): void {
   const url = window.URL.createObjectURL(blob);
@@ -8,7 +13,8 @@ function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  window.URL.revokeObjectURL(url);
+  // Revoking synchronously can cancel the download in Safari
+  setTimeout(() => window.URL.revokeObjectURL(url), 0);
 }
 
 // Turns the API's error body into displayable strings. Row validation errors
@@ -28,10 +34,6 @@ async function readErrors(res: Response): Promise<string[]> {
   }
   return [];
 }
-
-import { useId, useState } from "react";
-import PresetSelector from "./preset-selector";
-import ResultSummary from "./result-summary";
 
 export type Preset = "plain" | "branded";
 
