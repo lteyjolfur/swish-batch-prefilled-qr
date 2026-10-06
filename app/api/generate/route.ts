@@ -22,6 +22,8 @@ const checkRateLimit = createRateLimiter({
 });
 
 // Like Promise.all over items.map(fn), but with at most `limit` in flight.
+// After the first failure no new items start, so one bad row doesn't keep
+// calling Swish for the rest of the file.
 async function mapWithLimit<T, R>(
   items: T[],
   limit: number,
@@ -29,10 +31,16 @@ async function mapWithLimit<T, R>(
 ): Promise<R[]> {
   const results = new Array<R>(items.length);
   let next = 0;
+  let failed = false;
   const worker = async () => {
-    while (next < items.length) {
+    while (!failed && next < items.length) {
       const i = next++;
-      results[i] = await fn(items[i], i);
+      try {
+        results[i] = await fn(items[i], i);
+      } catch (err) {
+        failed = true;
+        throw err;
+      }
     }
   };
   await Promise.all(

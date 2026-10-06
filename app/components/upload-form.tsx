@@ -13,8 +13,9 @@ function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  // Revoking synchronously can cancel the download in Safari
-  setTimeout(() => window.URL.revokeObjectURL(url), 0);
+  // Safari can start the download after a.click() returns, and revoking the
+  // URL first cancels it. Keep the blob alive a while, as FileSaver.js does.
+  setTimeout(() => window.URL.revokeObjectURL(url), 40_000);
 }
 
 // Turns the API's error body into displayable strings. Row validation errors
