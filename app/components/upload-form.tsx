@@ -112,10 +112,7 @@ export default function UploadForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit} aria-busy={loading}>
       <div className="space-y-2">
-        <label
-          htmlFor={fileId}
-          className="block font-medium text-gray-900 dark:text-gray-100"
-        >
+        <label htmlFor={fileId} className="block font-medium">
           CSV file
         </label>
         <input
@@ -125,10 +122,10 @@ export default function UploadForm() {
           onChange={handleFileChange}
           disabled={loading}
           aria-describedby={hintId}
-          className="block w-full min-w-0 text-sm border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded px-3 py-2 file:mr-3 file:rounded file:border-0 file:bg-gray-100 dark:file:bg-gray-700 file:px-3 file:py-1 file:text-gray-900 dark:file:text-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="focus-ring block w-full min-w-0 rounded border border-border-field bg-field px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-field-button file:px-3 file:py-1 file:text-foreground"
           required
         />
-        <p id={hintId} className="text-sm text-gray-600 dark:text-gray-400">
+        <p id={hintId} className="text-sm text-muted">
           Columns: payee and amount, plus optional message (max 50 characters),
           label and size.
         </p>
@@ -145,7 +142,7 @@ export default function UploadForm() {
       />
       <button
         type="submit"
-        className="bg-blue-800 dark:bg-blue-600 text-white px-4 py-3 rounded disabled:opacity-60 disabled:cursor-not-allowed w-full font-semibold hover:bg-blue-900 dark:hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
+        className="focus-ring w-full rounded bg-primary px-4 py-3 font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
         disabled={!file || loading}
       >
         {loading ? "Generating…" : "Generate ZIP"}
