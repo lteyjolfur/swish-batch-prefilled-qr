@@ -12,7 +12,9 @@ const row = (label?: string, message = "Fee"): PaymentRow => ({
 
 describe("makeFilename", () => {
   it("slugifies the label", () => {
-    expect(makeFilename(row("Youth Group"), 1, new Set())).toBe("youth-group.png");
+    expect(makeFilename(row("Youth Group"), 1, new Set())).toBe(
+      "youth-group.png",
+    );
   });
 
   it("folds Swedish diacritics instead of dropping them", () => {
@@ -23,7 +25,9 @@ describe("makeFilename", () => {
   });
 
   it("collapses and trims separators", () => {
-    expect(makeFilename(row("  Fee -- 2026!! "), 1, new Set())).toBe("fee-2026.png");
+    expect(makeFilename(row("  Fee -- 2026!! "), 1, new Set())).toBe(
+      "fee-2026.png",
+    );
   });
 
   it("falls back to the message, then to the row index", () => {

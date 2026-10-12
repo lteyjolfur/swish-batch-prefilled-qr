@@ -41,13 +41,13 @@ payee,amount,message,label
 1231231234,150,Training fee,Youth Group
 ```
 
-| Column    | Required | Notes                                                              |
-| --------- | -------- | ------------------------------------------------------------------ |
-| `payee`   | Yes      | Swish number receiving the payment                                 |
-| `amount`  | Yes      | Amount in SEK, greater than 0                                      |
-| `message` | Yes      | Payment message, max 50 characters                                 |
-| `label`   | No       | Text on the branded card, and the image filename                   |
-| `size`    | No       | QR image size in pixels, 300–2000 (default 500)                    |
+| Column    | Required | Notes                                            |
+| --------- | -------- | ------------------------------------------------ |
+| `payee`   | Yes      | Swish number receiving the payment               |
+| `amount`  | Yes      | Amount in SEK, greater than 0                    |
+| `message` | Yes      | Payment message, max 50 characters               |
+| `label`   | No       | Text on the branded card, and the image filename |
+| `size`    | No       | QR image size in pixels, 300–2000 (default 500)  |
 
 Limits: up to 200 rows and 1 MB per file. A [sample CSV](public/sample/sample.csv) is included.
 
@@ -95,14 +95,16 @@ npm run dev
 
 The app runs at [http://localhost:3001](http://localhost:3001).
 
-| Script               | What it does                       |
-| -------------------- | ---------------------------------- |
-| `npm run dev`        | Start the dev server on port 3001  |
-| `npm run build`      | Production build                   |
-| `npm start`          | Serve the production build         |
-| `npm run lint`       | ESLint                             |
-| `npm test`           | Run the test suite once            |
-| `npm run test:watch` | Run tests in watch mode            |
+| Script                 | What it does                      |
+| ---------------------- | --------------------------------- |
+| `npm run dev`          | Start the dev server on port 3001 |
+| `npm run build`        | Production build                  |
+| `npm start`            | Serve the production build        |
+| `npm run lint`         | ESLint                            |
+| `npm run format`       | Format with Prettier              |
+| `npm run format:check` | Check formatting (runs in CI)     |
+| `npm test`             | Run the test suite once           |
+| `npm run test:watch`   | Run tests in watch mode           |
 
 ---
 
@@ -110,7 +112,7 @@ The app runs at [http://localhost:3001](http://localhost:3001).
 
 The suite covers the CSV parsing and validation, filename generation, the Swish request payload, the rate limiter, and the full `/api/generate` route. Route tests mock `fetch`, so they never call Swish, and assert on the actual ZIP contents, image dimensions, error responses and request concurrency.
 
-CI runs lint, type checking and tests on every push and pull request.
+CI runs lint, formatting checks, type checking and tests on every push and pull request.
 
 ---
 

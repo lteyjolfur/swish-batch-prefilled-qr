@@ -130,7 +130,9 @@ export async function POST(req: Request) {
         } catch (err: unknown) {
           const message =
             err instanceof Error ? err.message : "QR/image generation failed";
-          const where = row.label ? `Row ${i + 1} (${row.label})` : `Row ${i + 1}`;
+          const where = row.label
+            ? `Row ${i + 1} (${row.label})`
+            : `Row ${i + 1}`;
           throw new Error(`${where}: ${message}`);
         }
       });
@@ -150,7 +152,8 @@ export async function POST(req: Request) {
     try {
       zipBuffer = await buildZip(files);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "ZIP packaging failed";
+      const message =
+        err instanceof Error ? err.message : "ZIP packaging failed";
       return Response.json({ success: false, error: message }, { status: 500 });
     }
 

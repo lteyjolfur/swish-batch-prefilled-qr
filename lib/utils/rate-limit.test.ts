@@ -38,13 +38,17 @@ describe("getClientIp", () => {
     new Request("http://localhost", { headers });
 
   it("prefers x-real-ip", () => {
-    expect(getClientIp(req({ "x-real-ip": "1.1.1.1", "x-forwarded-for": "2.2.2.2" }))).toBe(
-      "1.1.1.1",
-    );
+    expect(
+      getClientIp(
+        req({ "x-real-ip": "1.1.1.1", "x-forwarded-for": "2.2.2.2" }),
+      ),
+    ).toBe("1.1.1.1");
   });
 
   it("falls back to the first x-forwarded-for entry", () => {
-    expect(getClientIp(req({ "x-forwarded-for": "2.2.2.2, 3.3.3.3" }))).toBe("2.2.2.2");
+    expect(getClientIp(req({ "x-forwarded-for": "2.2.2.2, 3.3.3.3" }))).toBe(
+      "2.2.2.2",
+    );
   });
 
   it("returns unknown when no header is present", () => {

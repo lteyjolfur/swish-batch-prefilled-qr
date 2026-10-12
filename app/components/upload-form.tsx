@@ -89,7 +89,8 @@ export default function UploadForm() {
       }
       if (res.status === 429) {
         setResult({
-          serverError: errors[0] ?? "Too many requests. Please try again later.",
+          serverError:
+            errors[0] ?? "Too many requests. Please try again later.",
         });
         return;
       }

@@ -6,7 +6,12 @@ export default function GlobalError() {
       <body>
         <main
           role="alert"
-          style={{ textAlign: "center", marginTop: "4rem", padding: "0 1rem", fontSize: 24 }}
+          style={{
+            textAlign: "center",
+            marginTop: "4rem",
+            padding: "0 1rem",
+            fontSize: 24,
+          }}
         >
           <h1>Something went wrong</h1>
           <p>An unexpected error occurred.</p>
