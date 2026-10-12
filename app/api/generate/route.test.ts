@@ -94,9 +94,7 @@ describe("POST /api/generate", () => {
 
   it("generates rows without a message", async () => {
     const fetchMock = mockSwish();
-    const res = await POST(
-      request(header + "123,100,,Youth\n123,50,,\n"),
-    );
+    const res = await POST(request(header + "123,100,,Youth\n123,50,,\n"));
     expect(res.status).toBe(200);
     const zip = await JSZip.loadAsync(await res.arrayBuffer());
     expect(Object.keys(zip.files)).toEqual(["youth.png", "payment-2.png"]);

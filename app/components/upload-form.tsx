@@ -92,7 +92,8 @@ export default function UploadForm() {
       }
       if (res.status === 429) {
         setResult({
-          serverError: errors[0] ?? "Too many requests. Please try again later.",
+          serverError:
+            errors[0] ?? "Too many requests. Please try again later.",
         });
         return;
       }
@@ -128,8 +129,8 @@ export default function UploadForm() {
           required
         />
         <p id={hintId} className="text-sm text-gray-600 dark:text-gray-400">
-          Columns: payee and amount, plus optional message (max 50
-          characters), label and size.
+          Columns: payee and amount, plus optional message (max 50 characters),
+          label and size.
         </p>
       </div>
       <PresetSelector

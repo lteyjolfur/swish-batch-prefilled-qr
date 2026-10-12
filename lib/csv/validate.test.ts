@@ -28,7 +28,11 @@ describe("validateRows", () => {
     const { valid } = validateRows([
       row({ payee: " 123 ", message: " Fee ", label: " Youth " }),
     ]);
-    expect(valid[0]).toMatchObject({ payee: "123", message: "Fee", label: "Youth" });
+    expect(valid[0]).toMatchObject({
+      payee: "123",
+      message: "Fee",
+      label: "Youth",
+    });
   });
 
   it.each([
