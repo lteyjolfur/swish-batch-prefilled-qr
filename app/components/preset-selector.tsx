@@ -15,14 +15,12 @@ export default function PresetSelector({
   ];
   return (
     <fieldset className="space-y-2" disabled={disabled}>
-      <legend className="block font-medium text-gray-900 dark:text-gray-100">
-        Preset
-      </legend>
+      <legend className="font-medium">Preset</legend>
       <div className="flex flex-wrap gap-x-6 gap-y-2">
         {options.map((option) => (
           <label
             key={option.value}
-            className="flex items-center gap-2 py-1 text-gray-800 dark:text-gray-200 cursor-pointer"
+            className="flex cursor-pointer items-center gap-2 py-1"
           >
             <input
               type="radio"
@@ -30,7 +28,7 @@ export default function PresetSelector({
               value={option.value}
               checked={value === option.value}
               onChange={() => onChange(option.value)}
-              className="h-4 w-4 accent-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+              className="focus-ring h-4 w-4 accent-primary"
             />
             {option.label}
           </label>

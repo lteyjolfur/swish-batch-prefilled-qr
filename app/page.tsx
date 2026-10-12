@@ -3,27 +3,29 @@ import UploadForm from "@/components/upload-form";
 
 export default function Home() {
   return (
-    <div className="min-h-dvh flex flex-col bg-gray-100 dark:bg-gray-950">
+    <div className="min-h-dvh flex flex-col">
       <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
-        <div className="bg-white dark:bg-gray-900 shadow-md rounded-lg p-6 sm:p-8 w-full max-w-md mx-auto border border-gray-200 dark:border-gray-800">
-          <h1 className="text-xl sm:text-2xl font-bold mb-2 text-center text-balance text-gray-900 dark:text-gray-100">
-            Batch generate branded Swish QR codes
-          </h1>
-          <p className="text-gray-700 dark:text-gray-300 mb-4 text-center text-pretty">
-            Generate Swish QR codes in bulk from a CSV file, with clean branded
-            output ready for sharing or printing.
-          </p>
-          <div className="mb-4 text-center">
-            <a
-              href="/sample/sample.csv"
-              download
-              className="inline-block py-1 text-blue-700 dark:text-blue-400 underline hover:text-blue-900 dark:hover:text-blue-300 text-sm rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              Download sample CSV
-            </a>
-          </div>
+        <article className="w-full max-w-md rounded-lg border border-border bg-surface p-6 shadow-md sm:p-8">
+          <header className="mb-4 space-y-2 text-center">
+            <h1 className="text-xl font-bold text-balance sm:text-2xl">
+              Batch generate branded Swish QR codes
+            </h1>
+            <p className="text-foreground-soft text-pretty">
+              Generate Swish QR codes in bulk from a CSV file, with clean
+              branded output ready for sharing or printing.
+            </p>
+            <p>
+              <a
+                href="/sample/sample.csv"
+                download
+                className="focus-ring inline-block rounded py-1 text-sm text-link underline hover:text-link-hover"
+              >
+                Download sample CSV
+              </a>
+            </p>
+          </header>
           <UploadForm />
-        </div>
+        </article>
       </main>
       <SiteFooter />
     </div>

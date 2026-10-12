@@ -12,18 +12,18 @@ export default function LockMessageToggle({
   const hintId = useId();
   return (
     <div className="space-y-1">
-      <label className="flex items-center gap-2 py-1 text-gray-800 dark:text-gray-200 cursor-pointer">
+      <label className="flex cursor-pointer items-center gap-2 py-1">
         <input
           type="checkbox"
           checked={value}
           onChange={(e) => onChange(e.target.checked)}
           disabled={disabled}
           aria-describedby={hintId}
-          className="h-4 w-4 accent-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          className="focus-ring h-4 w-4 accent-primary"
         />
         Lock message
       </label>
-      <p id={hintId} className="text-sm text-gray-600 dark:text-gray-400">
+      <p id={hintId} className="text-sm text-muted">
         When ticked, payers can&apos;t change the message. Rows without a
         message always let the payer write one.
       </p>
