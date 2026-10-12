@@ -28,7 +28,11 @@ describe("validateRows", () => {
     const { valid } = validateRows([
       row({ payee: " 123 ", message: " Fee ", label: " Youth " }),
     ]);
-    expect(valid[0]).toMatchObject({ payee: "123", message: "Fee", label: "Youth" });
+    expect(valid[0]).toMatchObject({
+      payee: "123",
+      message: "Fee",
+      label: "Youth",
+    });
   });
 
   it.each([
@@ -66,12 +70,21 @@ describe("validateRows", () => {
     [{ amount: "0" }, "Amount must be greater than 0"],
     [{ amount: "-5" }, "Amount must be greater than 0"],
     [{ amount: "10.999" }, "Amount can have at most 2 decimals"],
-    [{ message: "" }, "Message is required"],
     [{ message: "x".repeat(51) }, "Message must be 50 characters or fewer"],
   ])("rejects %o with %s", (overrides, message) => {
     const { valid, errors } = validateRows([row(overrides)]);
     expect(valid).toEqual([]);
     expect(errors).toEqual([{ row: 1, message }]);
+  });
+
+  it("accepts a row without a message", () => {
+    const { valid, errors } = validateRows([row({ message: "" })]);
+    expect(errors).toEqual([]);
+    expect(valid[0].message).toBe("");
+
+    const missing = validateRows([{ payee: "123", amount: "100" }]);
+    expect(missing.errors).toEqual([]);
+    expect(missing.valid[0].message).toBe("");
   });
 
   it("allows a 50 character message", () => {

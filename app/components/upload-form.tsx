@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import LockMessageToggle from "./lock-message-toggle";
 import PresetSelector from "./preset-selector";
 import ResultSummary from "./result-summary";
 
@@ -41,6 +42,7 @@ export type Preset = "plain" | "branded";
 export default function UploadForm() {
   const [file, setFile] = useState<File | null>(null);
   const [preset, setPreset] = useState<Preset>("branded");
+  const [lockMessage, setLockMessage] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success?: boolean;
@@ -72,6 +74,7 @@ export default function UploadForm() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("preset", preset);
+      formData.append("lockMessage", String(lockMessage));
       const res = await fetch("/api/generate", {
         method: "POST",
         body: formData,
@@ -89,7 +92,8 @@ export default function UploadForm() {
       }
       if (res.status === 429) {
         setResult({
-          serverError: errors[0] ?? "Too many requests. Please try again later.",
+          serverError:
+            errors[0] ?? "Too many requests. Please try again later.",
         });
         return;
       }
@@ -125,7 +129,7 @@ export default function UploadForm() {
           required
         />
         <p id={hintId} className="text-sm text-gray-600 dark:text-gray-400">
-          Columns: payee, amount, message (max 50 characters), and optional
+          Columns: payee and amount, plus optional message (max 50 characters),
           label and size.
         </p>
       </div>
@@ -134,9 +138,14 @@ export default function UploadForm() {
         onChange={handlePresetChange}
         disabled={loading}
       />
+      <LockMessageToggle
+        value={lockMessage}
+        onChange={setLockMessage}
+        disabled={loading}
+      />
       <button
         type="submit"
-        className="bg-blue-800 dark:bg-blue-500 text-white dark:text-gray-900 px-4 py-3 rounded disabled:opacity-60 disabled:cursor-not-allowed w-full font-semibold hover:bg-blue-900 dark:hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
+        className="bg-blue-800 dark:bg-blue-600 text-white px-4 py-3 rounded disabled:opacity-60 disabled:cursor-not-allowed w-full font-semibold hover:bg-blue-900 dark:hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
         disabled={!file || loading}
       >
         {loading ? "Generating…" : "Generate ZIP"}

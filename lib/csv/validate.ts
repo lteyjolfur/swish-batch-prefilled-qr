@@ -57,10 +57,7 @@ export function validateRows(rows: CsvRow[]): {
       });
       return;
     }
-    if (!message) {
-      errors.push({ row: rowNum, message: "Message is required" });
-      return;
-    }
+    // Message is optional; when empty the payer can write their own
     if (message.length > 50) {
       errors.push({
         row: rowNum,

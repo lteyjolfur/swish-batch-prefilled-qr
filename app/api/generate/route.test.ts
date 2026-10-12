@@ -30,10 +30,16 @@ function mockSwish(impl?: typeof fetch) {
 let ipCounter = 0;
 const nextIp = () => `10.0.0.${++ipCounter}`;
 
-function request(csv: string, preset = "plain", ip = nextIp()) {
+function request(
+  csv: string,
+  preset = "plain",
+  ip = nextIp(),
+  extra: Record<string, string> = {},
+) {
   const form = new FormData();
   form.append("file", new File([csv], "payments.csv", { type: "text/csv" }));
   form.append("preset", preset);
+  for (const [key, value] of Object.entries(extra)) form.append(key, value);
   return new Request("http://localhost/api/generate", {
     method: "POST",
     body: form,
@@ -69,9 +75,32 @@ describe("POST /api/generate", () => {
     expect(body).toMatchObject({
       payee: { value: "1231231234" },
       amount: { value: 100 },
-      message: { value: "Membership fee" },
+      message: { value: "Membership fee", editable: false },
       size: 500,
     });
+  });
+
+  it("leaves the message editable when lockMessage is false", async () => {
+    const fetchMock = mockSwish();
+    const res = await POST(
+      request(header + "123,100,Fee,\n", "plain", nextIp(), {
+        lockMessage: "false",
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = JSON.parse(fetchMock.mock.calls[0][1]!.body as string);
+    expect(body.message).toEqual({ value: "Fee", editable: true });
+  });
+
+  it("generates rows without a message", async () => {
+    const fetchMock = mockSwish();
+    const res = await POST(request(header + "123,100,,Youth\n123,50,,\n"));
+    expect(res.status).toBe(200);
+    const zip = await JSZip.loadAsync(await res.arrayBuffer());
+    expect(Object.keys(zip.files)).toEqual(["youth.png", "payment-2.png"]);
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(JSON.parse(init!.body as string)).not.toHaveProperty("message");
+    }
   });
 
   it("composes branded cards", async () => {

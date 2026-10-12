@@ -77,6 +77,8 @@ export async function POST(req: Request) {
     if (presetRaw === "plain" || presetRaw === "branded") {
       preset = presetRaw;
     }
+    // Locked unless the form explicitly says otherwise
+    const lockMessage = formData.get("lockMessage") !== "false";
     if (!file || typeof file !== "object" || !("arrayBuffer" in file)) {
       return Response.json(
         { success: false, error: "Missing file upload" },
@@ -125,12 +127,14 @@ export async function POST(req: Request) {
     try {
       images = await mapWithLimit(valid, CONCURRENCY, async (row, i) => {
         try {
-          const qrBuffer = await generateSwishQR(row);
+          const qrBuffer = await generateSwishQR(row, { lockMessage });
           return await applyPreset(preset, qrBuffer, row.label);
         } catch (err: unknown) {
           const message =
             err instanceof Error ? err.message : "QR/image generation failed";
-          const where = row.label ? `Row ${i + 1} (${row.label})` : `Row ${i + 1}`;
+          const where = row.label
+            ? `Row ${i + 1} (${row.label})`
+            : `Row ${i + 1}`;
           throw new Error(`${where}: ${message}`);
         }
       });
@@ -150,7 +154,8 @@ export async function POST(req: Request) {
     try {
       zipBuffer = await buildZip(files);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "ZIP packaging failed";
+      const message =
+        err instanceof Error ? err.message : "ZIP packaging failed";
       return Response.json({ success: false, error: message }, { status: 500 });
     }
 
