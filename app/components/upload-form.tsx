@@ -136,7 +136,7 @@ export default function UploadForm() {
       />
       <button
         type="submit"
-        className="bg-blue-800 dark:bg-blue-500 text-white dark:text-gray-900 px-4 py-3 rounded disabled:opacity-60 disabled:cursor-not-allowed w-full font-semibold hover:bg-blue-900 dark:hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
+        className="bg-blue-800 dark:bg-blue-600 text-white px-4 py-3 rounded disabled:opacity-60 disabled:cursor-not-allowed w-full font-semibold hover:bg-blue-900 dark:hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
         disabled={!file || loading}
       >
         {loading ? "Generating…" : "Generate ZIP"}
