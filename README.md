@@ -27,6 +27,7 @@ This tool was built to batch-generate QR codes with consistent, clean output.
 - Upload a CSV to generate QR codes in bulk
 - Automatic validation of input data, with per-row error messages
 - Branded card output (ready for sharing or printing), or plain QR codes
+- Optional per-row message, locked or editable by the payer
 - Download all generated QR codes as a ZIP
 - Simple UI — no login, no database
 - Responsive and accessible — scores 100 in all four Lighthouse categories (Performance, Accessibility, Best Practices, SEO)
@@ -45,13 +46,13 @@ payee,amount,message,label
 | --------- | -------- | ------------------------------------------------------------------ |
 | `payee`   | Yes      | Swish number receiving the payment                                 |
 | `amount`  | Yes      | Amount in SEK, greater than 0                                      |
-| `message` | Yes      | Payment message, max 50 characters                                 |
+| `message` | No       | Payment message, max 50 characters                                 |
 | `label`   | No       | Text on the branded card, and the image filename                   |
 | `size`    | No       | QR image size in pixels, 300–2000 (default 500)                    |
 
 Limits: up to 200 rows and 1 MB per file. A [sample CSV](public/sample/sample.csv) is included.
 
-All fields are locked in the generated QR code, so the payer can't change the amount or message.
+The payee and amount are always locked in the generated QR code, so the payer can't change them. The message is locked too unless you untick **Lock message**. Rows without a message let the payer write their own.
 
 ---
 

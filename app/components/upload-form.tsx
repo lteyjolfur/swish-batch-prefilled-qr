@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import LockMessageToggle from "./lock-message-toggle";
 import PresetSelector from "./preset-selector";
 import ResultSummary from "./result-summary";
 
@@ -41,6 +42,7 @@ export type Preset = "plain" | "branded";
 export default function UploadForm() {
   const [file, setFile] = useState<File | null>(null);
   const [preset, setPreset] = useState<Preset>("branded");
+  const [lockMessage, setLockMessage] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success?: boolean;
@@ -72,6 +74,7 @@ export default function UploadForm() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("preset", preset);
+      formData.append("lockMessage", String(lockMessage));
       const res = await fetch("/api/generate", {
         method: "POST",
         body: formData,
@@ -125,13 +128,18 @@ export default function UploadForm() {
           required
         />
         <p id={hintId} className="text-sm text-gray-600 dark:text-gray-400">
-          Columns: payee, amount, message (max 50 characters), and optional
-          label and size.
+          Columns: payee and amount, plus optional message (max 50
+          characters), label and size.
         </p>
       </div>
       <PresetSelector
         value={preset}
         onChange={handlePresetChange}
+        disabled={loading}
+      />
+      <LockMessageToggle
+        value={lockMessage}
+        onChange={setLockMessage}
         disabled={loading}
       />
       <button

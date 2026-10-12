@@ -77,6 +77,8 @@ export async function POST(req: Request) {
     if (presetRaw === "plain" || presetRaw === "branded") {
       preset = presetRaw;
     }
+    // Locked unless the form explicitly says otherwise
+    const lockMessage = formData.get("lockMessage") !== "false";
     if (!file || typeof file !== "object" || !("arrayBuffer" in file)) {
       return Response.json(
         { success: false, error: "Missing file upload" },
@@ -125,7 +127,7 @@ export async function POST(req: Request) {
     try {
       images = await mapWithLimit(valid, CONCURRENCY, async (row, i) => {
         try {
-          const qrBuffer = await generateSwishQR(row);
+          const qrBuffer = await generateSwishQR(row, { lockMessage });
           return await applyPreset(preset, qrBuffer, row.label);
         } catch (err: unknown) {
           const message =
