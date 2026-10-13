@@ -99,16 +99,17 @@ npm run dev
 
 The app runs at [http://localhost:3001](http://localhost:3001).
 
-| Script                 | What it does                      |
-| ---------------------- | --------------------------------- |
-| `npm run dev`          | Start the dev server on port 3001 |
-| `npm run build`        | Production build                  |
-| `npm start`            | Serve the production build        |
-| `npm run lint`         | ESLint                            |
-| `npm run format`       | Format with Prettier              |
-| `npm run format:check` | Check formatting (runs in CI)     |
-| `npm test`             | Run the test suite once           |
-| `npm run test:watch`   | Run tests in watch mode           |
+| Script                 | What it does                            |
+| ---------------------- | --------------------------------------- |
+| `npm run dev`          | Start the dev server on port 3001       |
+| `npm run build`        | Production build                        |
+| `npm start`            | Serve the production build              |
+| `npm run lint`         | ESLint                                  |
+| `npm run format`       | Format with Prettier                    |
+| `npm run format:check` | Check formatting (runs in CI)           |
+| `npm run typecheck`    | Generate route types and run TypeScript |
+| `npm test`             | Run the test suite once                 |
+| `npm run test:watch`   | Run tests in watch mode                 |
 
 ---
 
