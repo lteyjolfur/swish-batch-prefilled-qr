@@ -29,6 +29,7 @@ This tool was built to batch-generate QR codes with consistent, clean output.
 - Branded card output (ready for sharing or printing), or plain QR codes
 - Optional per-row message, locked or editable by the payer
 - Download all generated QR codes as a ZIP
+- Swedish and English, picked from the browser's language
 - Simple UI — no login, no database
 - Responsive and accessible — scores 100 in all four Lighthouse categories (Performance, Accessibility, Best Practices, SEO)
 
@@ -50,6 +51,8 @@ payee,amount,message,label
 | `label`   | No       | Text on the branded card, and the image filename |
 | `size`    | No       | QR image size in pixels, 300–2000 (default 500)  |
 
+The column names are always English, whichever language the site is shown in.
+
 Limits: up to 200 rows and 1 MB per file. A [sample CSV](public/sample/sample.csv) is included.
 
 The payee and amount are always locked in the generated QR code, so the payer can't change them. The message is locked too unless you untick **Lock message**. Rows without a message let the payer write their own.
@@ -64,7 +67,7 @@ CSV upload ──▶ parse & validate ──▶ Swish QR API ──▶ compose c
 ```
 
 1. The browser posts the CSV to a single route handler, `/api/generate`.
-2. Rows are parsed and validated. If any row is invalid, every error is returned at once (`Row 3: Amount must be a valid number`) and nothing is generated.
+2. Rows are parsed and validated. If any row is invalid, every error is returned at once as a language-neutral code, which the page shows in the visitor's language (`Row 3: Amount must be a valid number`) and nothing is generated.
 3. Each row is sent to Swish's public prefilled-QR API, with at most 5 requests in flight.
 4. For the branded preset, sharp composites the QR code onto a card and renders the label from a bundled font, so output is identical locally and on Vercel.
 5. Images are zipped with filenames taken from the labels. Å/ä/ö are converted (`Årsavgift` → `arsavgift.png`) and duplicate names get a suffix.

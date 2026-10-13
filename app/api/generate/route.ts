@@ -6,6 +6,11 @@ import { makeFilename } from "../../../lib/utils/filenames";
 import { buildZip } from "../../../lib/zip/build-zip";
 import { generateSwishQR } from "../../../lib/swish/generate-qr";
 import { applyPreset } from "../../../lib/image/presets";
+import {
+  CodedError,
+  type ErrorCode,
+  type ErrorParams,
+} from "../../../lib/utils/errors";
 import { createRateLimiter, getClientIp } from "../../../lib/utils/rate-limit";
 
 const MAX_FILE_BYTES = 1024 * 1024;
@@ -49,25 +54,33 @@ async function mapWithLimit<T, R>(
   return results;
 }
 
+function errorResponse(
+  status: number,
+  code: ErrorCode,
+  params?: ErrorParams,
+  headers?: Record<string, string>,
+) {
+  return Response.json(
+    { success: false, error: { code, params } },
+    { status, headers },
+  );
+}
+
 export async function POST(req: Request) {
   const { allowed, retryAfterSeconds } = checkRateLimit(getClientIp(req));
   if (!allowed) {
-    return Response.json(
-      {
-        success: false,
-        error: `Too many requests. Please wait ${retryAfterSeconds} seconds and try again.`,
-      },
-      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+    return errorResponse(
+      429,
+      "rateLimited",
+      { seconds: retryAfterSeconds },
+      { "Retry-After": String(retryAfterSeconds) },
     );
   }
 
   try {
     const contentType = req.headers.get("content-type") || "";
     if (!contentType.includes("multipart/form-data")) {
-      return Response.json(
-        { success: false, error: "Content-Type must be multipart/form-data" },
-        { status: 400 },
-      );
+      return errorResponse(400, "notMultipart");
     }
 
     const formData = await req.formData();
@@ -80,17 +93,13 @@ export async function POST(req: Request) {
     // Locked unless the form explicitly says otherwise
     const lockMessage = formData.get("lockMessage") !== "false";
     if (!file || typeof file !== "object" || !("arrayBuffer" in file)) {
-      return Response.json(
-        { success: false, error: "Missing file upload" },
-        { status: 400 },
-      );
+      return errorResponse(400, "missingFile");
     }
 
     if (file.size > MAX_FILE_BYTES) {
-      return Response.json(
-        { success: false, error: "CSV file must be 1 MB or smaller" },
-        { status: 400 },
-      );
+      return errorResponse(400, "fileTooLarge", {
+        maxMb: MAX_FILE_BYTES / (1024 * 1024),
+      });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -100,20 +109,14 @@ export async function POST(req: Request) {
     try {
       rows = parseCsv(csvText);
     } catch {
-      return Response.json(
-        { success: false, error: "Invalid CSV format" },
-        { status: 400 },
-      );
+      return errorResponse(400, "invalidCsv");
     }
 
     if (rows.length > MAX_ROWS) {
-      return Response.json(
-        {
-          success: false,
-          error: `CSV can have at most ${MAX_ROWS} rows (got ${rows.length})`,
-        },
-        { status: 400 },
-      );
+      return errorResponse(400, "tooManyRows", {
+        max: MAX_ROWS,
+        count: rows.length,
+      });
     }
 
     const { valid, errors } = validateRows(rows);
@@ -130,18 +133,18 @@ export async function POST(req: Request) {
           const qrBuffer = await generateSwishQR(row, { lockMessage });
           return await applyPreset(preset, qrBuffer, row.label);
         } catch (err: unknown) {
-          const message =
-            err instanceof Error ? err.message : "QR/image generation failed";
-          const where = row.label
-            ? `Row ${i + 1} (${row.label})`
-            : `Row ${i + 1}`;
-          throw new Error(`${where}: ${message}`);
+          throw new CodedError("generationFailed", {
+            row: i + 1,
+            ...(row.label ? { label: row.label } : {}),
+            detail: err instanceof Error ? err.message : "Unknown error",
+          });
         }
       });
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "QR/image generation failed";
-      return Response.json({ success: false, error: message }, { status: 500 });
+      if (err instanceof CodedError) {
+        return errorResponse(500, err.code, err.params);
+      }
+      return errorResponse(500, "internal");
     }
 
     const usedFilenames = new Set<string>();
@@ -153,10 +156,8 @@ export async function POST(req: Request) {
     let zipBuffer: Buffer;
     try {
       zipBuffer = await buildZip(files);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "ZIP packaging failed";
-      return Response.json({ success: false, error: message }, { status: 500 });
+    } catch {
+      return errorResponse(500, "zipFailed");
     }
 
     return new Response(new Uint8Array(zipBuffer), {
@@ -167,9 +168,6 @@ export async function POST(req: Request) {
       },
     });
   } catch {
-    return Response.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
-    );
+    return errorResponse(500, "internal");
   }
 }

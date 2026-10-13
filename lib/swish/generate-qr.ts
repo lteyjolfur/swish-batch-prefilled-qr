@@ -19,13 +19,11 @@ export async function generateSwishQR(
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Unknown error";
-    throw new Error(`Swish QR generation failed: ${msg}`);
+    throw new Error(msg);
   }
   if (!response.ok) {
     const detail = (await response.text().catch(() => "")).slice(0, 200);
-    throw new Error(
-      `Swish QR generation failed: HTTP ${response.status}${detail ? ` ${detail}` : ""}`,
-    );
+    throw new Error(`HTTP ${response.status}${detail ? ` ${detail}` : ""}`);
   }
   return Buffer.from(await response.arrayBuffer());
 }

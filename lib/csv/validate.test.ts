@@ -59,22 +59,22 @@ describe("validateRows", () => {
     expect(valid[0].label).toBeUndefined();
   });
 
-  it.each([
-    [{ payee: "" }, "Payee is required"],
-    [{ payee: "abc123" }, "Payee must be a Swish number (digits only)"],
-    [{ payee: "+46701234567" }, "Payee must be a Swish number (digits only)"],
-    [{ amount: "" }, "Amount is required"],
-    [{ amount: "abc" }, "Amount must be a valid number"],
-    [{ amount: "0x10" }, "Amount must be a valid number"],
-    [{ amount: "1e3" }, "Amount must be a valid number"],
-    [{ amount: "0" }, "Amount must be greater than 0"],
-    [{ amount: "-5" }, "Amount must be greater than 0"],
-    [{ amount: "10.999" }, "Amount can have at most 2 decimals"],
-    [{ message: "x".repeat(51) }, "Message must be 50 characters or fewer"],
-  ])("rejects %o with %s", (overrides, message) => {
+  it.each<[CsvRow, string, Record<string, number>?]>([
+    [{ payee: "" }, "payeeRequired"],
+    [{ payee: "abc123" }, "payeeInvalid"],
+    [{ payee: "+46701234567" }, "payeeInvalid"],
+    [{ amount: "" }, "amountRequired"],
+    [{ amount: "abc" }, "amountInvalid"],
+    [{ amount: "0x10" }, "amountInvalid"],
+    [{ amount: "1e3" }, "amountInvalid"],
+    [{ amount: "0" }, "amountNotPositive"],
+    [{ amount: "-5" }, "amountNotPositive"],
+    [{ amount: "10.999" }, "amountTooManyDecimals"],
+    [{ message: "x".repeat(51) }, "messageTooLong", { max: 50 }],
+  ])("rejects %o with %s", (overrides, code, params) => {
     const { valid, errors } = validateRows([row(overrides)]);
     expect(valid).toEqual([]);
-    expect(errors).toEqual([{ row: 1, message }]);
+    expect(errors).toEqual([{ row: 1, code, ...(params && { params }) }]);
   });
 
   it("accepts a row without a message", () => {
@@ -100,7 +100,11 @@ describe("validateRows", () => {
   it.each(["299", "2001", "500.5", "big"])("rejects size %s", (size) => {
     const { errors } = validateRows([row({ size })]);
     expect(errors).toEqual([
-      { row: 1, message: "Size must be a whole number between 300 and 2000" },
+      {
+        row: 1,
+        code: "sizeOutOfRange",
+        params: { min: 300, max: 2000 },
+      },
     ]);
   });
 
