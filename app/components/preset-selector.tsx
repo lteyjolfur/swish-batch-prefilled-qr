@@ -4,18 +4,22 @@ export default function PresetSelector({
   value,
   onChange,
   disabled,
+  legend,
+  labels,
 }: {
   value: Preset;
   onChange: (value: Preset) => void;
   disabled?: boolean;
+  legend: string;
+  labels: Record<Preset, string>;
 }) {
   const options: { value: Preset; label: string }[] = [
-    { value: "branded", label: "Branded" },
-    { value: "plain", label: "Plain" },
+    { value: "branded", label: labels.branded },
+    { value: "plain", label: labels.plain },
   ];
   return (
     <fieldset className="space-y-2" disabled={disabled}>
-      <legend className="font-medium">Preset</legend>
+      <legend className="font-medium">{legend}</legend>
       <div className="flex flex-wrap gap-x-6 gap-y-2">
         {options.map((option) => (
           <label

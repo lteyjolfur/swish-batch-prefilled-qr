@@ -1,19 +1,27 @@
+import type { ErrorCode } from "../utils/errors";
 import type { CsvRow, PaymentRow } from "./types";
 
 // Pixel size of the QR image requested from Swish (API minimum is 300).
 const DEFAULT_QR_SIZE = 500;
 const MIN_QR_SIZE = 300;
 const MAX_QR_SIZE = 2000;
+export const MAX_MESSAGE_LENGTH = 50;
+
+export type RowError = {
+  row: number;
+  code: ErrorCode;
+  params?: Record<string, number>;
+};
 
 /**
  * Validates an array of CsvRow objects, returning valid PaymentRows and errors.
  */
 export function validateRows(rows: CsvRow[]): {
   valid: PaymentRow[];
-  errors: { row: number; message: string }[];
+  errors: RowError[];
 } {
   const valid: PaymentRow[] = [];
-  const errors: { row: number; message: string }[] = [];
+  const errors: RowError[] = [];
 
   rows.forEach((row, idx) => {
     const rowNum = idx + 1; // 1-based, excluding header
@@ -26,42 +34,43 @@ export function validateRows(rows: CsvRow[]): {
     const sizeStr = row.size?.trim() ?? "";
 
     if (!payee) {
-      errors.push({ row: rowNum, message: "Payee is required" });
+      errors.push({ row: rowNum, code: "payeeRequired" });
       return;
     }
     if (!/^\d+$/.test(payee)) {
       errors.push({
         row: rowNum,
-        message: "Payee must be a Swish number (digits only)",
+        code: "payeeInvalid",
       });
       return;
     }
     if (!amountStr) {
-      errors.push({ row: rowNum, message: "Amount is required" });
+      errors.push({ row: rowNum, code: "amountRequired" });
       return;
     }
     // Plain decimal numbers only, so "0x10" or "1e3" aren't silently accepted
     if (!/^-?\d+(\.\d+)?$/.test(amountStr)) {
-      errors.push({ row: rowNum, message: "Amount must be a valid number" });
+      errors.push({ row: rowNum, code: "amountInvalid" });
       return;
     }
     const amount = Number(amountStr);
     if (amount <= 0) {
-      errors.push({ row: rowNum, message: "Amount must be greater than 0" });
+      errors.push({ row: rowNum, code: "amountNotPositive" });
       return;
     }
     if (!/^\d+(\.\d{1,2})?$/.test(amountStr)) {
       errors.push({
         row: rowNum,
-        message: "Amount can have at most 2 decimals",
+        code: "amountTooManyDecimals",
       });
       return;
     }
     // Message is optional; when empty the payer can write their own
-    if (message.length > 50) {
+    if (message.length > MAX_MESSAGE_LENGTH) {
       errors.push({
         row: rowNum,
-        message: "Message must be 50 characters or fewer",
+        code: "messageTooLong",
+        params: { max: MAX_MESSAGE_LENGTH },
       });
       return;
     }
@@ -76,7 +85,8 @@ export function validateRows(rows: CsvRow[]): {
       ) {
         errors.push({
           row: rowNum,
-          message: `Size must be a whole number between ${MIN_QR_SIZE} and ${MAX_QR_SIZE}`,
+          code: "sizeOutOfRange",
+          params: { min: MIN_QR_SIZE, max: MAX_QR_SIZE },
         });
         return;
       }

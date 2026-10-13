@@ -135,8 +135,8 @@ describe("POST /api/generate", () => {
     expect(await res.json()).toEqual({
       success: false,
       errors: [
-        { row: 1, message: "Amount must be a valid number" },
-        { row: 2, message: "Payee is required" },
+        { row: 1, code: "amountInvalid" },
+        { row: 2, code: "payeeRequired" },
       ],
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -146,7 +146,9 @@ describe("POST /api/generate", () => {
     mockSwish();
     const res = await POST(request(header + "123,100\n"));
     expect(res.status).toBe(400);
-    expect(await res.json()).toMatchObject({ error: "Invalid CSV format" });
+    expect(await res.json()).toMatchObject({
+      error: { code: "invalidCsv" },
+    });
   });
 
   it("rejects more than 200 rows", async () => {
@@ -155,7 +157,7 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + rows));
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({
-      error: "CSV can have at most 200 rows (got 201)",
+      error: { code: "tooManyRows", params: { max: 200, count: 201 } },
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -165,7 +167,7 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "x".repeat(1024 * 1024)));
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({
-      error: "CSV file must be 1 MB or smaller",
+      error: { code: "fileTooLarge", params: { maxMb: 1 } },
     });
   });
 
@@ -178,6 +180,10 @@ describe("POST /api/generate", () => {
       }),
     );
     expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      success: false,
+      error: { code: "notMultipart" },
+    });
   });
 
   it("returns 500 with the Swish error when the API fails", async () => {
@@ -185,7 +191,10 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error: "Row 1: Swish QR generation failed: HTTP 422 bad payee",
+      error: {
+        code: "generationFailed",
+        params: { row: 1, detail: "HTTP 422 bad payee" },
+      },
     });
   });
 
@@ -196,7 +205,10 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error: "Row 1: Swish QR generation failed: ECONNREFUSED",
+      error: {
+        code: "generationFailed",
+        params: { row: 1, detail: "ECONNREFUSED" },
+      },
     });
   });
 
@@ -205,7 +217,10 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,Youth\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error: "Row 1 (Youth): Swish QR generation failed: HTTP 422 bad payee",
+      error: {
+        code: "generationFailed",
+        params: { row: 1, label: "Youth", detail: "HTTP 422 bad payee" },
+      },
     });
   });
 
@@ -219,8 +234,14 @@ describe("POST /api/generate", () => {
     const res = await POST(request(header + "123,100,Fee,Youth\n"));
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({
-      error:
-        "Row 1 (Youth): Swish QR generation failed: The operation was aborted due to timeout",
+      error: {
+        code: "generationFailed",
+        params: {
+          row: 1,
+          label: "Youth",
+          detail: "The operation was aborted due to timeout",
+        },
+      },
     });
     // Every Swish request carries an abort signal, so a hung call can time out
     expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
@@ -254,7 +275,7 @@ describe("POST /api/generate", () => {
     expect(limited.status).toBe(429);
     expect(Number(limited.headers.get("retry-after"))).toBeGreaterThan(0);
     expect(await limited.json()).toMatchObject({
-      error: expect.stringContaining("Too many requests"),
+      error: { code: "rateLimited", params: { seconds: expect.any(Number) } },
     });
     expect(fetchMock).toHaveBeenCalledTimes(10);
 

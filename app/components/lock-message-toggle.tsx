@@ -4,10 +4,14 @@ export default function LockMessageToggle({
   value,
   onChange,
   disabled,
+  label,
+  hint,
 }: {
   value: boolean;
   onChange: (value: boolean) => void;
   disabled?: boolean;
+  label: string;
+  hint: string;
 }) {
   const hintId = useId();
   return (
@@ -21,11 +25,10 @@ export default function LockMessageToggle({
           aria-describedby={hintId}
           className="focus-ring h-4 w-4 accent-primary"
         />
-        Lock message
+        {label}
       </label>
       <p id={hintId} className="text-sm text-muted">
-        When ticked, payers can&apos;t change the message. Rows without a
-        message always let the payer write one.
+        {hint}
       </p>
     </div>
   );
